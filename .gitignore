@@ -1,0 +1,26 @@
+# Python
+*.py[cod]
+__pycache__/
+*.so
+*.egg-info/
+
+# UV
+.venv/
+.python-version
+uv.lock
+
+# Flask
+instance/
+*.log
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store

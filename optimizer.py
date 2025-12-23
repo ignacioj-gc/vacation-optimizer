@@ -2,16 +2,26 @@ from datetime import date, timedelta
 from typing import List, Dict, Set, Tuple
 import holidays
 
+# from app import app
+
 
 class VacationOptimizer:
-    def __init__(self, year: int, vacation_days: int, country: str = 'PR', blackout_dates: List[str] = None):
+    def __init__(self, year: int, vacation_days: int, country: str = 'PR', blackout_dates: List[str] = []):
         self.year = year
         self.vacation_days = vacation_days
         self.country = country
-        self.blackout_dates = set(blackout_dates) if blackout_dates else None
+        self.blackout_dates = set(blackout_dates) if blackout_dates else set()
 
-        self.holidays = holidays.country_holidays(country=country, years=year)
-        self.holiday_dates = set(str(d) for d in self.holidays.keys())
+        try:
+            holiday_obj = holidays.country_holidays(country, years=year)
+            # Convert to a simple dict immediately to avoid serialization issues
+            self.holidays = {date: name for date, name in holiday_obj.items()}
+            self.holiday_dates = set(str(d) for d in self.holidays.keys())
+        except (KeyError, AttributeError):
+            # Fallback to PR holidays if country not found
+            holiday_obj = holidays.country_holidays('PR', years=year)
+            self.holidays = {date: name for date, name in holiday_obj.items()}
+            self.holiday_dates = set(str(d) for d in self.holidays.keys())
 
         self.allocated_vacation = set()
 
@@ -207,5 +217,5 @@ class VacationOptimizer:
             'efficiency': round(efficiency, 2),
             'year': self.year,
             'country': self.country,
-            'holidays': [{'date': str(d), 'name': name} for d, name in self.holidays.items()]
+            'holidays': [{'date': str(d), 'name': name} for d, name in self.holidays.items()] if self.holidays else []
         }

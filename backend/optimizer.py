@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import List, Dict, Set, Tuple, Literal
 import holidays
 
@@ -21,7 +21,6 @@ class VacationOptimizer:
         self.vacation_days = vacation_days
         self.country = country
         self.blackout_dates = set(blackout_dates) if blackout_dates else set()
-        self.strategy = strategy
 
         try:
             holiday_obj = holidays.country_holidays(country, years=year)
@@ -36,6 +35,24 @@ class VacationOptimizer:
 
         self.allocated_vacation = set()
 
+        if custom_holidays:
+            for date_str in custom_holidays:
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    self.holidays[date_obj] = 'Custom Holiday'
+                except ValueError:
+                    pass
+
+        if exclude_holidays:
+            for date_str in exclude_holidays:
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    if date_obj in self.holidays:
+                        del self.holidays[date_obj]
+                
+                except ValueError:
+                    pass
+
     def is_workday(self, d: date, check_adjacent: bool = False) -> bool:
         date_str = str(d)
         is_valid_workday = (
@@ -44,7 +61,7 @@ class VacationOptimizer:
             and date_str not in self.blackout_dates
             and date_str not in self.allocated_vacation
         )
-        if self.strategy == 'spread' and is_valid_workday and check_adjacent:
+        if is_valid_workday and check_adjacent:
             return not self.is_adjacent_to_vacation(d)
         
         return is_valid_workday
@@ -157,15 +174,11 @@ class VacationOptimizer:
         year_end = date(self.year, 12, 31)
         
         # CRITICAL: Set max block size based on strategy
-        if self.strategy == 'spread':
-            max_block_size = min(remaining_days + 1, 4)  # Max 3 vacation days per block
-        else:  # continuous
-            max_block_size = min(remaining_days + 1, 11)  # Can use up to 10 days
+        max_block_size = min(remaining_days + 1, 4)  # Max 3 vacation days per block
 
         while current_date <= year_end:             
 
             no_checks = (
-                self.strategy == 'spread' and
                 not no_checks and
                 len(self.allocated_vacation) > 0
             )
@@ -189,17 +202,6 @@ class VacationOptimizer:
                 vacation_set = set(vacation_dates)
                 streak_length = self.calculate_streak_length(current_date, vacation_set)
                 efficiency = streak_length / len(vacation_dates)
-
-                # Bonus for creating very long streaks (continuous strategy)
-                if self.strategy == 'continuous':
-                    if streak_length >= 9:
-                        efficiency *= 1.1
-                    if streak_length >= 14:
-                        efficiency *= 1.2
-
-                # Bonus for shorter blocks (spread strategy)
-                if self.strategy == 'spread' and len(vacation_dates) <= 2:
-                    efficiency *= 1.2
 
                 if efficiency > best_score:
                     best_score = efficiency
@@ -326,6 +328,5 @@ class VacationOptimizer:
             "efficiency": round(efficiency, 2),
             "year": self.year,
             "country": self.country,
-            "strategy": self.strategy,
             "holidays":[{'date': str(d), 'name': name} for d, name in sorted(self.holidays.items())]
         }

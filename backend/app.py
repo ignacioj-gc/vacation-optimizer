@@ -1,3 +1,5 @@
+import traceback
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_caching import Cache
@@ -51,7 +53,6 @@ def optimize_vacation():
             blackout_dates = data.get("blackout_dates", [])
             custom_holidays = data.get("custom_holidays", [])
             exclude_holidays = data.get("exclude_holidays", [])
-            strategy = cast(_strategy_options, data.get("strategy", "spread"))
         else:
             year = int(request.args.get("year", 2025))
             vacation_days = int(request.args.get("days", 15))
@@ -59,7 +60,6 @@ def optimize_vacation():
             blackout_dates = []
             custom_holidays = []
             exclude_holidays = []
-            strategy = cast(_strategy_options, request.args.get("strategy", "spread"))
 
         if not 2020 <= year <= 2030:
             return jsonify({"error": "Year must be between 2020 and 2030"}), 400
@@ -67,7 +67,7 @@ def optimize_vacation():
             return jsonify({"error": "Vacation days must be between 1 and 50"}), 400
 
         optimizer = VacationOptimizer(
-            year, vacation_days, country, blackout_dates, custom_holidays, exclude_holidays, strategy
+            year, vacation_days, country, blackout_dates, custom_holidays, exclude_holidays
         )
         result = optimizer.optimize()
 
@@ -76,7 +76,8 @@ def optimize_vacation():
     except ValueError as e:
         return jsonify({"error": f"Invalid input: {str(e)}"}), 400
     except Exception as e:
-        app.logger.error(f"Optimization error: {str(e)}")
+        error_details = traceback.format_exc()
+        app.logger.error(f"Optimization error: {error_details}")
         return jsonify({"error": "Internal Server Error"}), 500
 
 

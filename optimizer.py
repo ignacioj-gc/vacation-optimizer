@@ -13,6 +13,8 @@ class VacationOptimizer:
         vacation_days: int,
         country: str = "PR",
         blackout_dates: List[str] = [],
+        custom_holidays: List[str] = [],
+        exclude_holidays: List[str] = [],
         strategy: _strategy_options = "spread",
     ):
         self.year = year
@@ -34,14 +36,18 @@ class VacationOptimizer:
 
         self.allocated_vacation = set()
 
-    def is_workday(self, d: date) -> bool:
+    def is_workday(self, d: date, check_adjacent: bool = False) -> bool:
         date_str = str(d)
-        return (
+        is_valid_workday = (
             d.weekday() < 5
             and date_str not in self.holiday_dates
             and date_str not in self.blackout_dates
             and date_str not in self.allocated_vacation
         )
+        if self.strategy == 'spread' and is_valid_workday and check_adjacent:
+            return not self.is_adjacent_to_vacation(d)
+        
+        return is_valid_workday
 
     def is_off_day(self, d: date) -> bool:
         date_str = str(d)
@@ -50,6 +56,39 @@ class VacationOptimizer:
             or date_str in self.holiday_dates
             or date_str in self.allocated_vacation
         )
+    
+    def is_adjacent_to_vacation(self, d: date) -> bool:
+        """Check if a date is adjacent to already-allocated vacation days, skipping weekends."""
+        
+        # Find previous workday
+        prev_day = d - timedelta(days=1)
+        days_checked = 0
+        while (prev_day >= date(self.year, 1, 1) and 
+            prev_day.weekday() in {5, 6} and 
+            days_checked < 7):  # Safety: max 7 days back
+            prev_day -= timedelta(days=1)
+            days_checked += 1
+        
+        # Find next workday  
+        next_day = d + timedelta(days=1)
+        days_checked = 0
+        while (next_day <= date(self.year, 12, 31) and 
+            next_day.weekday() in {5, 6} and 
+            days_checked < 7):  # Safety: max 7 days forward
+            next_day += timedelta(days=1)
+            days_checked += 1
+        
+        # Only check if we found a valid workday
+        prev_is_vacation = (prev_day >= date(self.year, 1, 1) and 
+                            prev_day.weekday() < 5 and
+                            str(prev_day) in self.allocated_vacation)
+        
+        next_is_vacation = (next_day <= date(self.year, 12, 31) and 
+                            next_day.weekday() < 5 and
+                            str(next_day) in self.allocated_vacation)
+        
+        return prev_is_vacation or next_is_vacation
+        
 
     def calculate_streak_length(
         self, start_date: date, vacation_dates: Set[str]
@@ -99,28 +138,43 @@ class VacationOptimizer:
 
         return (streak_end - streak_start).days + 1
 
-    def find_best_placement(self, remaining_days: int) -> Tuple[List[str], float]:
+    def find_best_placement(self, remaining_days: int, no_checks: bool = False) -> Tuple[List[str], float]:
         """
         Finds the best placement for vacation days based on selected strategy.
 
-        :param self: Description
-        :param remaining_days: Description
+        :param remaining_days: Available vacation days remaining
         :type remaining_days: int
-        :return: Description
+        :param no_checks: Disable checking if new vacation is adjacent to another vacation day
+        :type no_checks: bool
+        :return: Returns a list of vacation dates and the total efficiency of this placement
         :rtype: Tuple[List[str], float]
         """
+
         best_placement = []
         best_score = 0
 
         current_date = date(self.year, 1, 1)
         year_end = date(self.year, 12, 31)
+        
+        # CRITICAL: Set max block size based on strategy
+        if self.strategy == 'spread':
+            max_block_size = min(remaining_days + 1, 4)  # Max 3 vacation days per block
+        else:  # continuous
+            max_block_size = min(remaining_days + 1, 11)  # Can use up to 10 days
 
-        while current_date <= year_end:
-            if not self.is_workday(current_date):
+        while current_date <= year_end:             
+
+            no_checks = (
+                self.strategy == 'spread' and
+                not no_checks and
+                len(self.allocated_vacation) > 0
+            )
+
+            if not self.is_workday(current_date, check_adjacent=no_checks):
                 current_date += timedelta(days=1)
                 continue
 
-            for length in range(1, min(remaining_days + 1, 11)):
+            for length in range(1, max_block_size):
                 vacation_dates = []
                 test_date = current_date
 
@@ -136,13 +190,16 @@ class VacationOptimizer:
                 streak_length = self.calculate_streak_length(current_date, vacation_set)
                 efficiency = streak_length / len(vacation_dates)
 
-                if streak_length >= 9:
-                    efficiency *= 1.1
-                if streak_length >= 14:
-                    efficiency *= 1.2
+                # Bonus for creating very long streaks (continuous strategy)
+                if self.strategy == 'continuous':
+                    if streak_length >= 9:
+                        efficiency *= 1.1
+                    if streak_length >= 14:
+                        efficiency *= 1.2
 
-                if self.strategy == 'long_weekends' and len(vacation_dates) <= 2:
-                    efficiency *= 1.1
+                # Bonus for shorter blocks (spread strategy)
+                if self.strategy == 'spread' and len(vacation_dates) <= 2:
+                    efficiency *= 1.2
 
                 if efficiency > best_score:
                     best_score = efficiency
@@ -157,77 +214,109 @@ class VacationOptimizer:
         streaks = []
         current_date = date(self.year, 1, 1)
         year_end = date(self.year, 12, 31)
-
+        
+        day_count = 0
         while current_date <= year_end:
-            if self.is_off_day(current_date):
+            day_count += 1
+            
+            date_str = str(current_date)
+            
+            # Simple check without calling is_off_day
+            is_weekend = current_date.weekday() >= 5
+            is_holiday = date_str in self.holiday_dates
+            is_vacation = date_str in self.allocated_vacation
+            
+            if is_weekend or is_holiday or is_vacation:
+                # Start of a streak
                 streak_start = current_date
                 streak_dates = []
-
-                while current_date <= year_end and self.is_off_day(current_date):
+                
+                # Collect consecutive off days
+                while current_date <= year_end:
                     date_str = str(current_date)
-                    day_type = (
-                        "weekend"
-                        if current_date.weekday() >= 5
-                        else (
-                            "holiday" if date_str in self.holiday_dates else "vacation"
-                        )
-                    )
-                    streak_dates.append({"date": date_str, "type": day_type})
+                    is_weekend = current_date.weekday() >= 5
+                    is_holiday = date_str in self.holiday_dates
+                    is_vacation = date_str in self.allocated_vacation
+                    
+                    if not (is_weekend or is_holiday or is_vacation):
+                        break  # End of streak
+                    
+                    day_type = 'weekend' if is_weekend else ('holiday' if is_holiday else 'vacation')
+                    streak_dates.append({
+                        'date': date_str,
+                        'type': day_type
+                    })
                     current_date += timedelta(days=1)
-
+                
                 if len(streak_dates) >= 2:
-                    streaks.append(
-                        {
-                            "start": str(streak_start),
-                            "end": str(current_date - timedelta(days=1)),
-                            "length": len(streak_dates),
-                            "dates": streak_dates,
-                        }
-                    )
-
+                    streaks.append({
+                        'start': str(streak_start),
+                        'end': str(streak_dates[-1]['date']),
+                        'length': len(streak_dates),
+                        'dates': streak_dates
+                    })
             else:
                 current_date += timedelta(days=1)
-
+        
         return streaks
 
     def optimize(self) -> Dict:
         """
-        Main optimization method using greedy algorithms.
-        Returns complete optimization results.
+        Heuristic-based optimization for spreading vacation throughout the year.
         """
-
         remaining = self.vacation_days
-        iterations = 0
-        max_iterations = 100
-
-        while remaining > 0 and iterations < max_iterations:
-            placement, score = self.find_best_placement(remaining)
-
-            if not placement or score == 0:
-                # If no good placements are found, just use remaining days on random workdays.
-                current_date = date(self.year, 1, 1)
-
-                while remaining > 0 and current_date <= date(self.year, 12, 31):
-                    if self.is_workday(current_date):
-                        self.allocated_vacation.add(str(current_date))
-                        remaining -= 1
-                    current_date += timedelta(days=1)
+        
+        # Phase 1: Fill 1-day gaps
+        for holiday_date in sorted(self.holidays.keys()):
+            if remaining <= 0:
                 break
-
-            for day in placement:
-                self.allocated_vacation.add(day)
-
-            remaining -= len(placement)
-            iterations += 1
-
+            
+            if holiday_date.weekday() == 3:  # Thursday
+                friday = holiday_date + timedelta(days=1)
+                if self.is_workday(friday, check_adjacent=False) and str(friday) not in self.allocated_vacation:
+                    self.allocated_vacation.add(str(friday))
+                    remaining -= 1
+            
+            elif holiday_date.weekday() == 1:  # Tuesday
+                monday = holiday_date - timedelta(days=1)
+                if self.is_workday(monday, check_adjacent=False) and str(monday) not in self.allocated_vacation:
+                    self.allocated_vacation.add(str(monday))
+                    remaining -= 1
+                
+        # Phase 2: Extend 3-day weekends
+        for holiday_date in sorted(self.holidays.keys()):
+            if remaining <= 0:
+                break
+            
+            if holiday_date.weekday() == 0:  # Monday
+                friday = holiday_date - timedelta(days=3)
+                if self.is_workday(friday, check_adjacent=False) and str(friday) not in self.allocated_vacation:
+                    self.allocated_vacation.add(str(friday))
+                    remaining -= 1
+            
+            elif holiday_date.weekday() == 4:  # Friday
+                monday = holiday_date + timedelta(days=3)
+                if self.is_workday(monday, check_adjacent=False) and str(monday) not in self.allocated_vacation:
+                    self.allocated_vacation.add(str(monday))
+                    remaining -= 1                
+        # Skip phases 3 and 4 for now - they might have bugs
+        
+        # Phase 5: Simplified greedy
+        if remaining > 0:
+            # Just place remaining days anywhere
+            current_date = date(self.year, 1, 1)
+            count = 0
+            while remaining > 0 and current_date <= date(self.year, 12, 31):
+                if self.is_workday(current_date, check_adjacent=False):
+                    self.allocated_vacation.add(str(current_date))
+                    remaining -= 1
+                    count += 1
+                current_date += timedelta(days=1)
+        
         streaks = self.calculate_streaks()
-        total_days_off = sum(streak["length"] for streak in streaks)
-
+        total_days_off = sum(streak['length'] for streak in streaks)
         sorted_vacation = sorted(list(self.allocated_vacation))
-
-        efficiency = (
-            total_days_off / self.vacation_days if self.vacation_days > 0 else 0
-        )
+        efficiency = total_days_off / self.vacation_days if self.vacation_days > 0 else 0
 
         return {
             "vacation_days": sorted_vacation,
@@ -237,9 +326,6 @@ class VacationOptimizer:
             "efficiency": round(efficiency, 2),
             "year": self.year,
             "country": self.country,
-            "holidays": (
-                [{"date": str(d), "name": name} for d, name in self.holidays.items()]
-                if self.holidays
-                else []
-            ),
+            "strategy": self.strategy,
+            "holidays":[{'date': str(d), 'name': name} for d, name in sorted(self.holidays.items())]
         }

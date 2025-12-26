@@ -3,8 +3,8 @@ from optimizer import VacationOptimizer
 import calendar
 
 
-def visualize_year(year, vacation_days, country):
-    optimizer = VacationOptimizer(year, vacation_days, country)
+def visualize_year(year, vacation_days, country, strategy):
+    optimizer = VacationOptimizer(year, vacation_days, country, strategy=strategy)
     result = optimizer.optimize()
 
     vacation_set = set(result["vacation_days"])
@@ -32,4 +32,7 @@ def visualize_year(year, vacation_days, country):
 
 
 if __name__ == "__main__":
-    visualize_year(2025, 15, "PR")
+    # print('Original strategy:')
+    # visualize_year(2025, 15, "PR", 'continuous')
+    print('\nSpread strategy:')
+    visualize_year(2025, 15, "PR", 'spread')

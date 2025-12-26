@@ -35,7 +35,7 @@ def optimize_vacation():
     Query params (GET) or JSON body (POST)
     - year: int
     - days: int
-    - country: str (ISO Country Code, default 'US')
+    - country: str (ISO Country Code, default 'PR')
     - blackout_dates: list of date strings (optional)
     - strategy: type of strategy to be used (go for continuous block or spread around the year)
 
@@ -49,12 +49,16 @@ def optimize_vacation():
             vacation_days = int(data.get("days", 15))
             country = data.get("country", "PR")
             blackout_dates = data.get("blackout_dates", [])
+            custom_holidays = data.get("custom_holidays", [])
+            exclude_holidays = data.get("exclude_holidays", [])
             strategy = cast(_strategy_options, data.get("strategy", "spread"))
         else:
             year = int(request.args.get("year", 2025))
             vacation_days = int(request.args.get("days", 15))
             country = request.args.get("country", "US")
             blackout_dates = []
+            custom_holidays = []
+            exclude_holidays = []
             strategy = cast(_strategy_options, request.args.get("strategy", "spread"))
 
         if not 2020 <= year <= 2030:
@@ -63,7 +67,7 @@ def optimize_vacation():
             return jsonify({"error": "Vacation days must be between 1 and 50"}), 400
 
         optimizer = VacationOptimizer(
-            year, vacation_days, country, blackout_dates, strategy
+            year, vacation_days, country, blackout_dates, custom_holidays, exclude_holidays, strategy
         )
         result = optimizer.optimize()
 

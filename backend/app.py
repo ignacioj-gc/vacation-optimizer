@@ -1,16 +1,22 @@
 import traceback
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from flask_caching import Cache
 from optimizer import VacationOptimizer
 from typing import cast, Literal
 
+import holidays
+
 
 _strategy_options = Literal["spread", "continuous"]
 
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder='../frontend/static',
+    template_folder='../frontend/templates'
+    )
 CORS(app)
 
 cache = Cache(app, config={"CACHE_TYPE": "simple", "CACHE_DEFAULT_TIMEOUT": 86400})
@@ -19,13 +25,12 @@ cache = Cache(app, config={"CACHE_TYPE": "simple", "CACHE_DEFAULT_TIMEOUT": 8640
 @app.route("/")
 def index():
     """Basic info endpoint"""
-    return jsonify(
-        {
-            "name": "Vacation Optimizer API",
-            "version": "1.0",
-            "endpoints": {"optimize": "/api/optimize"},
-        }
-    )
+    return render_template("index.html")
+
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('../frontend/static', path)
 
 
 @app.route("/api/optimize", methods=["GET", "POST"])
@@ -79,6 +84,24 @@ def optimize_vacation():
         error_details = traceback.format_exc()
         app.logger.error(f"Optimization error: {error_details}")
         return jsonify({"error": "Internal Server Error"}), 500
+
+
+@app.route('/api/get_holidays', methods=['POST'])
+def get_holidays():
+    try:
+        data = request.json
+        year = int(data.get('year', 0))
+        country = data.get('country', 'PR')
+        holidays_obj = holidays.country_holidays(country=country, years=year)
+        holiday_strs = {date.strftime("%Y-%m-%d"): name for date, name in holidays_obj.items()}
+        print(holiday_strs)
+        return jsonify(holiday_strs), 200
+    except ValueError as e:
+        return jsonify({"error": f"Invalid input {str(e)}"}), 400
+    except Exception as e:
+        error_details = traceback.format_exc()
+        app.logger.error(f"Error getting holidays: {error_details}")
+        return jsonify({"error: Internal Server Error"}), 500
 
 
 @app.errorhandler(404)

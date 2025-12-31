@@ -5,9 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Vacation Optimizer</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     </head>
 
     <body>
+        <script src="{{ url_for('static', filename='dist/main.js') }}" type="module"></script>
         <h1>Vacation Optimizer</h1>
         <h2>Web app to provide optimal vacation calendars to maximize time off work for a given public holiday calendar.</h2>
         <p>Instructions Placeholder</p>

@@ -28,11 +28,6 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/static/<path:path>')
-def send_static(path):
-    return send_from_directory('../frontend/static', path)
-
-
 @app.route("/api/optimize", methods=["GET", "POST"])
 @cache.cached(timeout=86400, query_string=True)
 def optimize_vacation():

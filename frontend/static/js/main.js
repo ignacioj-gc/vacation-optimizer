@@ -3,6 +3,8 @@
 /// <reference types="datatables.net"
 
 import { Calendar } from "@fullcalendar/core"
+import multiMonthPlugin from "@fullcalendar/multimonth"
+import bootstrap5Plugin from "@fullcalendar/bootstrap5"
 
 function loadHolidays() {
     let year = $("#year");
@@ -13,6 +15,10 @@ function loadHolidays() {
 document.addEventListener('DOMContentLoaded', () => {
     var calendarDiv = document.getElementById("calendar");
     var calendar = new Calendar(calendarDiv, {
-        initialView: 'multiMonthYear'
+        plugins: [multiMonthPlugin, bootstrap5Plugin],
+        timeZone: 'AST',
+        initialView: 'multiMonthYear',
+        themeSystem: 'bootstrap5'
     });
+    calendar.render();
 });

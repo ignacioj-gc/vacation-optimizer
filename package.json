@@ -1,13 +1,23 @@
 {
   "devDependencies": {
     "@types/jquery": "^3.5.33",
-    "@types/jqueryui": "^1.12.24"
+    "@types/jqueryui": "^1.12.24",
+    "vite": "^7.3.0"
   },
   "dependencies": {
+    "@fullcalendar/bootstrap5": "^6.1.20",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/list": "^6.1.20",
+    "@fullcalendar/multimonth": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
     "@popperjs/core": "^2.11.8",
     "@types/datatables.net": "^1.10.28",
     "bootstrap": "^5.3.8",
-    "fullcalendar": "^6.1.20",
     "jquery": "^3.7.1"
+  },
+  "scripts": {
+    "build": " vite build",
+    "dev": "vite build --watch"
   }
 }

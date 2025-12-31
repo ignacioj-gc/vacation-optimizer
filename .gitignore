@@ -9,6 +9,10 @@ __pycache__/
 .python-version
 uv.lock
 
+#Node
+node_modules/
+package-lock.json
+
 # Flask
 instance/
 *.log
@@ -26,4 +30,3 @@ instance/
 .DS_Store
 
 # General
-dump.txt

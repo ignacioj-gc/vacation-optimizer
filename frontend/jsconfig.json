@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "checkJs": true,
+    "lib": ["ES6", "DOM"]
+  },
+  "include": [
+    "static/js/**/*"
+  ],
+  "typeAcquisition": {
+    "enable": true,
+    "include": ["jquery", "jqueryui", "jquery.datatables"]
+  }
+}

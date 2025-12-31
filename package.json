@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "@types/jquery": "^3.5.33",
+    "@types/jqueryui": "^1.12.24"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@types/datatables.net": "^1.10.28",
+    "bootstrap": "^5.3.8",
+    "fullcalendar": "^6.1.20",
+    "jquery": "^3.7.1"
+  }
+}

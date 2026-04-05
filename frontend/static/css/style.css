@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Bonbon&family=Mali:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Pacifico&display=swap');
+
+body {
+    background-color: #01386a;
+}
+
+#control-panel {
+    align-items: center;
+    /* justify-content: center; */
+    border-width: 2px;
+    border-color: antiquewhite;
+    border-radius: 2.5px;
+}
+
+#optimize-btn {
+    font-family: 'Pacifico';
+    color: antiquewhite;
+    font-size: 18px;
+}
+
+/* 
+.form-select {
+    width: 25%;
+    margin: 5px;
+}
+
+.form-label {
+    width: 25%;
+    margin: 5px;
+} */
+
+#main-page {
+    padding: 10px;
+}
+
+h1, h2, p, label {
+    color: antiquewhite;
+}
+
+#main-title {
+    font-family: "Pacifico";
+}
+
+#page-subtitle {
+    font-family: "Mali";
+}

@@ -1,0 +1,11 @@
+{
+  "frontend/static/js/main.js": {
+    "file": "main.js",
+    "name": "main",
+    "src": "frontend/static/js/main.js",
+    "isEntry": true,
+    "css": [
+      "main.css"
+    ]
+  }
+}

@@ -2,6 +2,7 @@ import { rollup } from "rollup";
 
 export default {
     build: {
+        manifest: true,
         outDir: "frontend/static/dist",
         rollupOptions: {
             input: "frontend/static/js/main.js",

@@ -1,42 +1,65 @@
 <!doctype html>
 
 <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>vacation optimizer</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static', filename='dist/main.css') }}">
-    </head>
 
-    <body>
-        <script src="{{ url_for('static', filename='dist/main.js') }}" type="module"></script>
-        <div id="main-page" style="margin: 1%">
-            <h1 id="main-title">Vacation Optimizer</h1>
-            <h2 id="page-subtitle">Web app to provide optimal vacation calendars maximizing time off work accounting for public holidays.</h2>
-            <p id="instructions">If necessary, select a country from the dropdown menu to view holidays. Select any non-holiday to add it to the calculation, or select holidays to remove them from consideration. Use the Vacation Days field to enter the amount of vacation days available for use. Once ready, click Optimize to generate a vacation calendar.</p>
-            <div class="row mt-3 mb-3 col-6 mx-auto" id="control-panel">
-                <div class="col">
-                    <label class="form-label" for="country">Country:</label>
-                    <input class="form-control" id="country" list="countries" placeholder="Type to search...">
-                    <datalist id="countries">
-                        <option value="PR">Puerto Rico</option>
-                        <option value="US">United States</option>
-                        <option value="FR">France</option>
-                        <option value="ES">Spain</option>
-                        <option value="UK">United Kingdom</option>
-                    </datalist>
-                    </select>
-                </div>
-                <div class="col">
-                    <label class="form-label" for="vacation-days">Vacation Days:</label>
-                    <input type="number" class="form-control" id="vacation-days">
-                </div>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>vacation optimizer</title>
+    {% if not config.DEBUG %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/main.css') }}">
+    {% endif %}
+</head>
+
+<body class="bg-navy">
+    {% if config.DEBUG %}
+    <script type="module" src="http://localhost:5173/@vite/client"></script>
+    <script type="module" src="http://localhost:5173/static/js/main.js"></script>
+    {% else %}
+    <script src="{{ url_for('static', filename='dist/main.js') }}" type="module"></script>
+    {% endif %}
+    <div id="main-page" class="m-[1%] p-2.5">
+        <h1 id="main-title" class="text-4xl font-pacifico mb-4">Vacation Optimizer</h1>
+        <h2 id="page-subtitle" class="text-3xl font-manjari mb-2">Generates optimal vacation calendars maximizing time
+            off work accounting for public holidays.</h2>
+        <p id="instructions" class="mb-4">If necessary, select a country from the dropdown menu to view holidays. Select
+            any non-holiday to add it to the calculation, or select holidays to remove them from consideration. Use the
+            Vacation Days field to enter the amount of vacation days available for use. Once ready, click Optimize to
+            generate a vacation calendar.</p>
+        <div id="control-panel"
+            class="grid grid-cols-1 sm:grid-cols-4 items-end p-4 gap-4 mt-4 mb-4 w-full lg:w-2/3 mx-auto border-2 border-parchment rounded-md">
+            <div class="col">
+                <label class="block mb-2" for="year">Year:</label>
+                <input
+                    class="block w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 text-parchment"
+                    type="number" id="year">
             </div>
-            <div id="calendar"></div>
-            <div class="d-grid gap-2 col-6 mx-auto">
-                <button class="btn btn-primary mt-3" type="button" id="optimize-btn">Optimize</button>
+            <div class="col">
+                <label class="block mb-2" for="country">Country/Region:</label>
+                <select class="w-full" id="country-selection" name="country" placeholder="Type to search..."></select>
+            </div>
+            <div class="col">
+                <label class="block mb-2" for="vacation-days">Vacation Days:</label>
+                <input type="number"
+                    class="block w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 text-parchment"
+                    id="vacation-days">
+            </div>
+            <div class="col">
+                <button type="button" id="load-calendar-btn"
+                    class="px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 text-parchment">Load
+                    Calendar</button>
             </div>
         </div>
-    </body>
+        <div id="calendar"></div>
+        <div id="holiday-list" class="flex flex-col"></div>
+        <div class="grid gap-2 w-full md:w-1/2 mx-auto">
+            <button
+                class="mt-4 px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 font-pacifico text-lg text-parchment "
+                type="button" id="optimize-btn">Optimize</button>
+        </div>
+        <div id="vacation-days-list">
+            <ul class="flex flex-col"></ul>
+        </div>
+    </div>
+</body>
+
 </html>

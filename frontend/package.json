@@ -1,13 +1,22 @@
 {
-  "name": "frontend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "vacation-optimizer",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": " vite build",
+    "dev": "vite",
+    "watch": "vite build --watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@types/datatables.net": "^1.12.3",
+    "build": "^0.1.4",
+    "scripts": "^0.1.0",
+    "tailwindcss": "^4.3.5",
+    "tom-select": "^2.7.0",
+    "vanilla-calendar-pro": "^3.4.0"
+  }
 }
